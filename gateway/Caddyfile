@@ -1,0 +1,22 @@
+# Local gateway: one origin for REST and WebSocket traffic.
+# Routing table: docs/contracts/rest-api.md §2.
+{
+	admin off
+	auto_https off
+}
+
+:8000 {
+	@telemetry path /ws/* /api/v1/telemetry/* /api/v1/public/telemetry/*
+	handle @telemetry {
+		reverse_proxy {$TELEMETRY_UPSTREAM}
+	}
+
+	@relayer path /api/v1/proofs/* /api/v1/public/proofs/* /api/v1/public/batches/*
+	handle @relayer {
+		reverse_proxy {$RELAYER_UPSTREAM}
+	}
+
+	handle {
+		reverse_proxy {$CORE_UPSTREAM}
+	}
+}
