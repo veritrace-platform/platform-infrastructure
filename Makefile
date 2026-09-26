@@ -17,17 +17,14 @@ help: ## List available targets
 .PHONY: up
 up: .env ## Start infrastructure and gateway
 	$(COMPOSE) up -d --wait
-	$(COMPOSE) wait kafka-init
 
 .PHONY: up-apps
 up-apps: .env ## Start infrastructure, gateway, and Go services built from sibling repositories
 	$(APPS_UPSTREAMS) $(COMPOSE) --profile apps up -d --build --wait
-	$(COMPOSE) wait kafka-init
 
 .PHONY: up-tools
 up-tools: .env ## Start infrastructure plus developer tools (Kafka UI on :8085)
 	$(COMPOSE) --profile tools up -d --wait
-	$(COMPOSE) wait kafka-init
 
 .PHONY: tunnel
 tunnel: ## Public HTTPS URL for phone testing (TUNNEL_TARGET=http://host.docker.internal:3000 for a frontend)

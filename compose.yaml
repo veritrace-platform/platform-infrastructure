@@ -132,6 +132,10 @@ services:
       DASHBOARD_UPSTREAM: ${GATEWAY_DASHBOARD_UPSTREAM:-host.docker.internal:3001}
       PWA_UPSTREAM: ${GATEWAY_PWA_UPSTREAM:-host.docker.internal:3002}
       PORTAL_UPSTREAM: ${GATEWAY_PORTAL_UPSTREAM:-host.docker.internal:3003}
+    # Starting the gateway last makes `up --wait` return only after Kafka topics exist.
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
