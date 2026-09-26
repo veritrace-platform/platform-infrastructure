@@ -106,7 +106,7 @@ services:
 
   redis:
     <<: *restart
-    image: redis:8.8.3-alpine
+    image: redis:8.10.0-alpine
     mem_limit: 256m
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?}"]
     environment:
@@ -225,7 +225,7 @@ services:
   kafka-ui:
     <<: *restart
     profiles: ["tools"]
-    image: ghcr.io/kafbat/kafka-ui:v1.1.0
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
     mem_limit: 512m
     environment:
       KAFKA_CLUSTERS_0_NAME: local
