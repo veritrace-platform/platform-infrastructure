@@ -1,0 +1,11 @@
+# Ingestion service: reads every device topic (shared subscription).
+user telemetry-ingest
+topic read veritrace/v1/devices/+/telemetry
+topic read $SYS/#
+
+# Development-only fleet simulator: publishes on behalf of many devices.
+user fleet-simulator
+topic write veritrace/v1/devices/+/telemetry
+
+# Any other authenticated user is a device and may publish only to its own topic.
+pattern write veritrace/v1/devices/%u/telemetry
