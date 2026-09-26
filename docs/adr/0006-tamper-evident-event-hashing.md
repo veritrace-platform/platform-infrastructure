@@ -27,5 +27,6 @@ Hashing raw JSON is not reproducible, because key order and number formatting va
 
 - Rewriting or deleting any past event breaks the per-shipment chain, which is detectable offline.
 - M2 Merkle batching uses these stored hashes directly as leaves.
-- Every producer of hashed records must use the same canonicalization, which is covered by shared test
-  vectors.
+- Every producer of hashed records must use the same canonicalization. This is covered by shared test
+  vectors in `docs/contracts/test-vectors/`, added with SCM-EP2-US05: canonical JSON inputs, expected
+  canonical bytes, and expected hashes.

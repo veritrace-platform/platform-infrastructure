@@ -12,6 +12,15 @@ Framework choices inside each frontend repository belong to that repository.
 
 All REST and WebSocket traffic goes through the gateway. Frontends never call service ports directly.
 
+### Testing on a phone
+
+Camera and geolocation APIs work only on HTTPS (or `localhost`). To test the PWA on a real phone:
+
+1. Run the frontend dev server with a rewrite that proxies `/api` and `/ws` to `http://localhost:8000`,
+   so there is a single origin.
+2. Run `make tunnel TUNNEL_TARGET=http://host.docker.internal:3000` in `platform-infrastructure`.
+3. Open the printed `https://….trycloudflare.com` URL on the phone. The URL changes on every run.
+
 ## 2. Types from contracts
 
 - REST types are generated from each service's `api/openapi.yaml` with `openapi-typescript`. Do not

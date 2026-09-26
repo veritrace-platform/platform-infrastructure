@@ -13,9 +13,9 @@ Product and engineering documentation for the VeriTrace platform. It is the refe
 
 | Section | Documents |
 | --- | --- |
-| **Architecture** | [Overview](architecture/overview.md) · [Data model](architecture/data-model.md) · [Security](architecture/security.md) |
+| **Architecture** | [Overview](architecture/overview.md) · [Data model](architecture/data-model.md) · [Security](architecture/security.md) · [External services and cost](architecture/external-services.md) |
 | **Domain rules** | [GS1 identifiers](domain/gs1-identifiers.md) · [Lots, inventory and shipment lifecycle](domain/shipment-lifecycle.md) · [Access control](domain/access-control.md) · [Cold-chain monitoring](domain/cold-chain-monitoring.md) · [Public verification (M2)](domain/public-verification.md) |
-| **Contracts** | [REST API](contracts/rest-api.md) · [Messaging: MQTT, Kafka, WebSocket](contracts/messaging.md) · [Smart contract (M2)](contracts/smart-contract.md) |
+| **Contracts** | [REST API](contracts/rest-api.md) · [Messaging: MQTT, Kafka, WebSocket](contracts/messaging.md) · [Smart contract (M2)](contracts/smart-contract.md) · [Shared test vectors](contracts/test-vectors/) |
 | **Decisions** | [Architecture decision records](adr/README.md) |
 | **Guides** | [Development setup](guides/development-setup.md) · [Engineering workflow](guides/engineering-workflow.md) · [Coding standards](guides/coding-standards.md) · [Frontend integration](guides/frontend-integration.md) |
 

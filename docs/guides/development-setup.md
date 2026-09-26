@@ -4,13 +4,14 @@
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| Docker Engine + Compose plugin | Docker 27+, Compose v2.27+ | Everything |
+| Docker Engine (`docker-ce`) with the Buildx and Compose plugins | Docker 29+, Compose 2.27+ | Everything |
 | GNU Make | 4+ | Task shortcuts |
 | Go | 1.27 (`GOTOOLCHAIN=auto` downloads it on demand) | Go services |
 | Node.js | 22 LTS | Frontends |
-| Python + `uv` | 3.13 | IoT simulator (optional; it also runs in Docker) |
-| Foundry | latest stable | Smart contracts (M2) |
+| `uv` (installs and manages Python 3.13) | latest | IoT simulator (optional; it also runs in Docker) |
+| Foundry (`forge`, `cast`, `anvil`) | latest stable | Smart contracts and local chain (M2) |
 | GitHub CLI (`gh`) | latest | Optional: pull requests from the terminal |
+| `shellcheck`, `jq` | latest | Script linting and JSON inspection |
 
 Clone every repository into one parent directory. The `apps` compose profile relies on this layout:
 
@@ -68,7 +69,16 @@ make lint
 
 The gateway on `:8000` forwards to services on the host by default.
 
-## 5. Frontend workflow (no Go toolchain)
+## 5. Stopping and cleaning up the stack
+
+| Command | Effect |
+| --- | --- |
+| `make down` | Stop all VeriTrace containers and keep data. Containers never start automatically with Docker. |
+| `make reset` | Stop containers and delete VeriTrace data volumes |
+| `make clean` | `reset` plus removal of locally built VeriTrace images |
+| `make disk` | Show Docker disk usage |
+
+## 6. Frontend workflow (no Go toolchain)
 
 ```bash
 cd platform-infrastructure

@@ -40,8 +40,9 @@ For a digit string `d₁…dₙ₋₁` (the key without its check digit):
 2. `S = Σ dᵢ × wᵢ`
 3. `check = (10 − (S mod 10)) mod 10`
 
-The same function serves every key length. Reference test vectors, shared by the Go and TypeScript
-implementations:
+The same function serves every key length. Reference test vectors are listed below. The machine-readable
+set used by the Go and TypeScript test suites is
+[`contracts/test-vectors/gs1-check-digit.json`](../contracts/test-vectors/gs1-check-digit.json).
 
 | Payload (without check digit) | Check digit | Full key |
 | --- | --- | --- |

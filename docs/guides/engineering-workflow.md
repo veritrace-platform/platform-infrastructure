@@ -56,7 +56,30 @@ A story is done when all of the following hold:
    - authorization goes through the policy.
 5. **Docs:** contracts, ADRs (if a decision changed), and the [roadmap](../roadmap.md) status are updated.
 
-## 5. Releases and versioning
+## 5. Shared code across service repositories
+
+- The Go platform packages (`internal/platform/…`, `internal/httpapi`) are duplicated on purpose in each
+  service repository. There is no shared module to version.
+- A change to them is applied to every service in the same step.
+  `make check-drift` in `platform-infrastructure` reports any divergence between sibling checkouts.
+- Shared test data (GS1 vectors, and later canonical-JSON, Merkle, and label-signature vectors) lives
+  in `platform-infrastructure/docs/contracts/test-vectors/`. Each service copies what it uses into its
+  own `testdata/` and must not modify the copy.
+
+## 6. Repository settings (GitHub)
+
+Apply the same settings to every repository:
+
+| Setting | Value |
+| --- | --- |
+| Default branch | `develop` |
+| Merge button | Squash merging only; pull request title used as the commit message |
+| Branches | Delete head branches after merge |
+| Protection on `main` and `develop` | Require a pull request, require the CI status checks to pass, block force pushes and deletion |
+| Security | Enable Dependabot alerts and security updates, secret scanning, and private vulnerability reporting |
+| Actions | Allow GitHub-authored and verified actions; workflow permissions read-only by default |
+
+## 7. Releases and versioning
 
 - Each repository follows [Semantic Versioning](https://semver.org/). Tags are `vMAJOR.MINOR.PATCH` on
   `main`.
