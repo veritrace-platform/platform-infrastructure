@@ -1,12 +1,14 @@
 # platform-infrastructure
 
-Shared infrastructure and documentation for the VeriTrace platform:
+Runtime infrastructure for the VeriTrace platform:
 
 - **Local environment:** a Docker Compose stack with pinned versions of PostgreSQL 18 + TimescaleDB,
   Kafka (KRaft), Mosquitto, Redis, and a Caddy gateway.
 - **Bootstrap:** per-service databases and least-privilege roles, Kafka topics, and MQTT credentials
   and ACLs.
-- **Documentation:** architecture, domain rules, contracts, ADRs, roadmap, and guides in [`docs/`](docs/README.md).
+
+Project documentation (architecture, domain rules, contracts, decisions, roadmap, guides) lives in the
+project home repository, [`veritrace`](https://github.com/veritrace-platform/veritrace).
 
 ## Quick start
 
@@ -24,7 +26,8 @@ make ps
 | Redis | `localhost:6379` |
 
 Every host port can be changed in `.env`. Run `make help` for all targets, and see the
-[development setup guide](docs/guides/development-setup.md) for the full workflow.
+[development setup guide](https://github.com/veritrace-platform/veritrace/blob/main/docs/guides/development-setup.md)
+for the full workflow.
 
 ## Profiles
 
@@ -43,10 +46,8 @@ data, and `make clean` also removes locally built images.
 compose.yaml                 local stack (pinned images, profiles)
 postgres/initdb/             first-start bootstrap: databases and roles
 kafka/create-topics.sh       topic definitions
-scripts/                     maintenance checks (shared Go platform drift)
 mosquitto/config/            broker config, ACL, credential generation
 gateway/Caddyfile            routing table shared with deployment
-docs/                        platform documentation
 ```
 
 ## License

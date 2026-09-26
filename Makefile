@@ -70,8 +70,4 @@ psql-telemetry: ## Open psql on veritrace_telemetry as the owner role
 .PHONY: lint
 lint: ## Validate compose file and shell scripts
 	$(COMPOSE) config --quiet
-	shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh scripts/*.sh
-
-.PHONY: check-drift
-check-drift: ## Report differences in shared Go platform packages across sibling service repositories
-	scripts/check-platform-drift.sh
+	shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh

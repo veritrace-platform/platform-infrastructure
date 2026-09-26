@@ -21,7 +21,7 @@ jobs:
       - name: Compose file
         run: cp .env.example .env && docker compose config --quiet
       - name: Shell scripts
-        run: shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh scripts/*.sh
+        run: shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh
       - name: Caddyfile
         run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 caddy:2.11.4-alpine caddy validate --config /etc/caddy/Caddyfile
 
