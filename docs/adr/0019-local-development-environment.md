@@ -27,7 +27,8 @@ command. The frontend developer should not need a Go toolchain to get a working 
   | *(default)* | PostgreSQL, Kafka with topic initialization, Mosquitto, Redis, gateway |
   | `apps` | Builds and runs the Go services from the sibling repositories (`../core-business-service`, …) and runs their migrations first. For frontend work without Go. |
   | `tools` | Kafka UI |
-  | `web3` (M2, added with SCM-EP4-US01) | Local IPFS node (Kubo) |
+  | `tunnel` | Cloudflare quick tunnel: a temporary public HTTPS URL for testing on phones (camera and geolocation require HTTPS) |
+  | `web3` (M2, added with SCM-EP4-US01 and SCM-EP5-US01) | Local IPFS node (Kubo) and local EVM chain (Anvil) |
   | `observability` (M2, added with SCM-EP7-US02) | Prometheus, Loki, Alloy, Grafana |
 
 - **Gateway.** A local gateway on `http://localhost:8000` applies the production routing table. By default
@@ -40,8 +41,12 @@ command. The frontend developer should not need a Go toolchain to get a working 
   - runs as a container;
   - replays YAML scenarios (normal transit, a short excursion under 30 s, a sustained breach, a sensor
     gap) for a configurable number of devices and SSCCs.
-- Host ports are configurable in `.env` (`POSTGRES_HOST_PORT`, `KAFKA_HOST_PORT`, …) for machines that already run
-  other stacks on the default ports.
+- **Workstation safety:**
+  - Host ports bind to `127.0.0.1` only, so databases are never exposed to the local network.
+  - Every container has a memory limit.
+  - Containers restart after a crash (`on-failure`) but do **not** start automatically with Docker.
+  - Ports are configurable in `.env` (`POSTGRES_HOST_PORT`, `KAFKA_HOST_PORT`, …) for machines that
+    already run other stacks on the default ports.
 - Every repository ships a `.env.example`. Real `.env` files are never committed.
 
 ## Consequences

@@ -20,6 +20,9 @@ has four problems:
   - 10 minutes have passed since the oldest pending leaf;
   - 1024 leaves are pending;
   - a **priority** leaf (a recall event) arrives, in which case the batch is sealed immediately.
+
+  No batch is sealed while nothing is pending, so an idle platform spends no gas. This keeps testnet
+  usage within faucet allowances ([external-services.md](../architecture/external-services.md)).
 - **Tree construction** is compatible with OpenZeppelin `StandardMerkleTree`:
   - `leaf node = keccak256(bytes.concat(keccak256(abi.encode(bytes32 leafHash))))`, a double hash that
     prevents second-preimage attacks;

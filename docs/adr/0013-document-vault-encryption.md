@@ -36,8 +36,12 @@ would therefore release unauthenticated plaintext.
 - **Integrity.** The SHA-256 of the plaintext is computed during upload, stored, and exposed as
   `X-Content-SHA256` on download. It is also included in the `shipment.document_attached` event, so it is
   anchored on-chain.
-- **Storage.** Only the ciphertext is pinned to IPFS: Pinata in cloud environments and a local Kubo node
-  in development, behind one `BlobStore` interface.
+- **Storage.** Only the ciphertext goes to IPFS, behind one `BlobStore` interface.
+  - A **self-hosted Kubo node** is the primary store in every environment.
+  - **Pinata** is optional. It is used through Kubo's remote-pinning support, for document CIDs only,
+    and only when configured.
+  - This keeps the platform within Pinata's free-plan limits
+    ([external-services.md](../architecture/external-services.md)).
 - **Decryption stream.** The service fetches the ciphertext stream, verifies each chunk before writing its
   plaintext to the response, and aborts the response on any authentication failure.
 - **Limits.** Accepted types are PDF, PNG, and JPEG, checked by magic bytes and not only by the declared

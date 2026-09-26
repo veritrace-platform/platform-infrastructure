@@ -144,8 +144,9 @@ See [ADR-0014](../adr/0014-on-chain-commitments.md), [ADR-0015](../adr/0015-gasl
 
 - **Local:** Docker Compose in `platform-infrastructure`
   ([ADR-0019](../adr/0019-local-development-environment.md)).
-- **Deployed (M2):** frontends on Vercel; backend on a VM with the same compose topology behind Caddy
-  ([ADR-0018](../adr/0018-deployment-topology.md)).
+- **M2:** local mode is always available. The optional cloud mode runs the frontends on Vercel and the
+  backend on a single $0 VM with the same compose topology behind Caddy
+  ([ADR-0018](../adr/0018-deployment-topology.md), [external-services.md](external-services.md)).
 
 ## 7. Cross-cutting concerns
 

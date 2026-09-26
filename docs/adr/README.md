@@ -23,7 +23,7 @@ to `Superseded by ADR-XXXX`.
 | [0015](0015-gasless-relayer.md) | Gasless relayer and chain indexer | M2 |
 | [0016](0016-signed-labels-and-public-verification.md) | Signed labels and public verification | M2 |
 | [0017](0017-observability.md) | Observability | M1 + M2 |
-| [0018](0018-deployment-topology.md) | Deployment topology | M2 |
+| [0018](0018-deployment-topology.md) | Deployment topology and cost | M1 + M2 |
 | [0019](0019-local-development-environment.md) | Local development environment | M1 |
 
-New ADRs start from [the template](template.md). All ADRs above are `Accepted`.
+New ADRs start from [the template](template.md). All ADRs above are `Accepted` unless marked otherwise.

@@ -32,6 +32,9 @@ mempool.
   4. The **indexer** subscribes to `BatchCommitted` over WebSocket RPC and backfills with `eth_getLogs`
      from `chain_cursors`. A batch is marked `CONFIRMED` only when its block is at or below the chain's
      `finalized` block.
+- **Networks.** Development and integration tests use a local **Anvil** chain (`web3` compose profile;
+  instant blocks, no faucet). Only deployed environments use Polygon Amoy. The chain is selected by
+  configuration (`CHAIN_ID`, `RPC_URL`, `WS_RPC_URL`, `CONTRACT_ADDRESS`).
 - **Key custody.** In development the master key comes from `RELAYER_PRIVATE_KEY`. It is never logged,
   and the process refuses to start if the key is missing. The deployed contract grants `RELAYER_ROLE` to
   this address only.

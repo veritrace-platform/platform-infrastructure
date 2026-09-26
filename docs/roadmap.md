@@ -25,6 +25,7 @@ names and commit footers.
 | SCM-EP0-US02 | Local environment: pinned compose stack, database bootstrap, Kafka topics, MQTT auth, gateway | platform-infrastructure | BE | DONE |
 | SCM-EP0-US03 | Go service skeleton: config, logging, trace context, problem responses, admin server, graceful shutdown, migrations, Docker image, CI | core-business-service, telemetry-stream-service | BE | DONE |
 | SCM-EP0-US04 | Organization-wide contribution files and repository hygiene | .github, all | BE | DONE |
+| SCM-EP0-US05 | Demonstration kit: idempotent seed data (tenants, users, locations, products, lots), end-to-end scenario script, and runbook | platform-infrastructure | BE | TODO |
 
 ### EP1 — Multi-tenancy, identity, and access control
 
@@ -107,6 +108,7 @@ names and commit footers.
 | --- | --- | --- | --- | --- |
 | SCM-EP7-US01 | Domain metrics (lag, detection latency, outbox backlog, relayer queue) | Go services | BE | TODO |
 | SCM-EP7-US02 | Prometheus, Alloy, Loki, and Grafana with a unified dashboard (`observability` profile) | platform-infrastructure | BE | TODO |
-| SCM-EP7-US03 | Release pipelines: images to GHCR on tag | Go services | BE | TODO |
-| SCM-EP7-US04 | VM deployment: production compose overrides, Caddy TLS, backups, SSH deploy workflow | platform-infrastructure | BE | TODO |
-| SCM-EP7-US05 | Frontend deployments on Vercel | frontends | FE | TODO |
+| SCM-EP7-US03 | Release pipelines: multi-architecture images (amd64, arm64) to GHCR on tag | Go services | BE | TODO |
+| SCM-EP7-US04 | Local demonstration mode for M2: one command for all profiles, chain selection (Amoy or Anvil), tunnel-based portal URL, extended seed and scenario runbook | platform-infrastructure | BE | TODO |
+| SCM-EP7-US05 | Optional cloud mode: production compose overrides, Caddy TLS, backups, SSH deploy workflow on Oracle Always Free | platform-infrastructure | BE | TODO |
+| SCM-EP7-US06 | Optional cloud mode for frontends on Vercel | frontends | FE | TODO |
