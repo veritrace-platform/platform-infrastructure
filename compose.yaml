@@ -4,14 +4,19 @@ name: veritrace
 # Default profile: infrastructure dependencies and the gateway.
 # Profile "apps": Go services built from sibling repositories.
 # Profile "tools": developer tooling (Kafka UI).
+# Profile "tunnel": temporary public HTTPS URL for testing on phones (Cloudflare quick tunnel).
+#
+# Ports bind to 127.0.0.1 only, containers restart on crashes but not when Docker starts, and memory is
+# capped per container so the stack never takes over the workstation.
 
 x-restart: &restart
-  restart: unless-stopped
+  restart: on-failure:3
 
 services:
   postgres:
     <<: *restart
     image: timescale/timescaledb:2.30.1-pg18
+    mem_limit: 1g
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -25,7 +30,7 @@ services:
       VERITRACE_RELAYER_OWNER_PASSWORD: ${VERITRACE_RELAYER_OWNER_PASSWORD:?}
       VERITRACE_RELAYER_APP_PASSWORD: ${VERITRACE_RELAYER_APP_PASSWORD:?}
     ports:
-      - "${POSTGRES_HOST_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
       - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
@@ -38,6 +43,7 @@ services:
   kafka:
     <<: *restart
     image: apache/kafka:4.3.1
+    mem_limit: 1g
     environment:
       CLUSTER_ID: VnRyYWNlTG9jYWxEZXYwMQ
       KAFKA_NODE_ID: 1
@@ -56,7 +62,7 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_HEAP_OPTS: -Xms512m -Xmx512m
     ports:
-      - "${KAFKA_HOST_PORT:-9092}:9092"
+      - "127.0.0.1:${KAFKA_HOST_PORT:-9092}:9092"
     volumes:
       - kafka-data:/var/lib/kafka/data
     healthcheck:
@@ -68,6 +74,7 @@ services:
 
   kafka-init:
     image: apache/kafka:4.3.1
+    mem_limit: 512m
     depends_on:
       kafka:
         condition: service_healthy
@@ -81,12 +88,13 @@ services:
   mosquitto:
     <<: *restart
     image: eclipse-mosquitto:2.0.22
+    mem_limit: 64m
     entrypoint: ["/bin/sh", "/mosquitto/config/entrypoint.sh"]
     environment:
       MQTT_INGEST_PASSWORD: ${MQTT_INGEST_PASSWORD:?}
       MQTT_SIMULATOR_PASSWORD: ${MQTT_SIMULATOR_PASSWORD:?}
     ports:
-      - "${MQTT_HOST_PORT:-1883}:1883"
+      - "127.0.0.1:${MQTT_HOST_PORT:-1883}:1883"
     volumes:
       - ./mosquitto/config:/mosquitto/config:ro
       - mosquitto-data:/mosquitto/data
@@ -99,11 +107,12 @@ services:
   redis:
     <<: *restart
     image: redis:8.8.3-alpine
+    mem_limit: 256m
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?}"]
     environment:
       REDISCLI_AUTH: ${REDIS_PASSWORD}
     ports:
-      - "${REDIS_HOST_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -115,6 +124,7 @@ services:
   gateway:
     <<: *restart
     image: caddy:2.11.4-alpine
+    mem_limit: 128m
     environment:
       CORE_UPSTREAM: ${GATEWAY_CORE_UPSTREAM:-host.docker.internal:8080}
       TELEMETRY_UPSTREAM: ${GATEWAY_TELEMETRY_UPSTREAM:-host.docker.internal:8090}
@@ -122,7 +132,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "${GATEWAY_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${GATEWAY_HOST_PORT:-8000}:8000"
     volumes:
       - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
 
@@ -131,6 +141,7 @@ services:
   core-business-service-migrate:
     profiles: ["apps"]
     image: veritrace/core-business-service:dev
+    mem_limit: 128m
     build: ../core-business-service
     command: ["migrate", "up"]
     environment:
@@ -144,6 +155,7 @@ services:
     <<: *restart
     profiles: ["apps"]
     image: veritrace/core-business-service:dev
+    mem_limit: 256m
     build: ../core-business-service
     command: ["serve"]
     environment:
@@ -153,8 +165,8 @@ services:
       ADMIN_ADDR: ":8081"
       DATABASE_URL: postgres://veritrace_core_app:${VERITRACE_CORE_APP_PASSWORD}@postgres:5432/veritrace_core?sslmode=disable
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
     depends_on:
       core-business-service-migrate:
         condition: service_completed_successfully
@@ -167,6 +179,7 @@ services:
   telemetry-stream-service-migrate:
     profiles: ["apps"]
     image: veritrace/telemetry-stream-service:dev
+    mem_limit: 128m
     build: ../telemetry-stream-service
     command: ["migrate", "up"]
     environment:
@@ -180,6 +193,7 @@ services:
     <<: *restart
     profiles: ["apps"]
     image: veritrace/telemetry-stream-service:dev
+    mem_limit: 256m
     build: ../telemetry-stream-service
     command: ["serve"]
     environment:
@@ -189,8 +203,8 @@ services:
       ADMIN_ADDR: ":8091"
       DATABASE_URL: postgres://veritrace_telemetry_app:${VERITRACE_TELEMETRY_APP_PASSWORD}@postgres:5432/veritrace_telemetry?sslmode=disable
     ports:
-      - "8090:8090"
-      - "8091:8091"
+      - "127.0.0.1:8090:8090"
+      - "127.0.0.1:8091:8091"
     depends_on:
       telemetry-stream-service-migrate:
         condition: service_completed_successfully
@@ -206,14 +220,26 @@ services:
     <<: *restart
     profiles: ["tools"]
     image: ghcr.io/kafbat/kafka-ui:v1.1.0
+    mem_limit: 512m
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
     ports:
-      - "8085:8080"
+      - "127.0.0.1:8085:8080"
     depends_on:
       kafka:
         condition: service_healthy
+
+  # --- profile: tunnel -----------------------------------------------------
+
+  tunnel:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:2026.9.3
+    mem_limit: 128m
+    command: ["tunnel", "--no-autoupdate", "--url", "${TUNNEL_TARGET:-http://gateway:8000}"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
 
 volumes:
   postgres-data:

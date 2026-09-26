@@ -2,6 +2,7 @@ SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
 COMPOSE := docker compose
+ALL_PROFILES := --profile apps --profile tools --profile tunnel
 APPS_UPSTREAMS := GATEWAY_CORE_UPSTREAM=core-business-service:8080 \
                   GATEWAY_TELEMETRY_UPSTREAM=telemetry-stream-service:8090
 
@@ -25,21 +26,34 @@ up-apps: .env ## Start infrastructure, gateway, and Go services built from sibli
 up-tools: .env ## Start infrastructure plus developer tools (Kafka UI on :8085)
 	$(COMPOSE) --profile tools up -d --wait
 
+.PHONY: tunnel
+tunnel: ## Public HTTPS URL for phone testing (TUNNEL_TARGET=http://host.docker.internal:3000 for a frontend)
+	$(COMPOSE) --profile tunnel run --rm tunnel
+
 .PHONY: down
 down: ## Stop all containers (keeps data)
-	$(COMPOSE) --profile apps --profile tools down
+	$(COMPOSE) $(ALL_PROFILES) down
 
 .PHONY: reset
 reset: ## Stop all containers and delete all data volumes
-	$(COMPOSE) --profile apps --profile tools down -v
+	$(COMPOSE) $(ALL_PROFILES) down -v
+
+.PHONY: clean
+clean: ## reset + remove locally built service images and dangling build layers
+	$(COMPOSE) $(ALL_PROFILES) down -v --rmi local
+	docker image prune -f --filter label=com.docker.compose.project=veritrace
+
+.PHONY: disk
+disk: ## Show Docker disk usage
+	docker system df
 
 .PHONY: ps
 ps: ## Show container status
-	$(COMPOSE) --profile apps --profile tools ps
+	$(COMPOSE) $(ALL_PROFILES) ps
 
 .PHONY: logs
 logs: ## Follow logs (SERVICE=<name> to filter)
-	$(COMPOSE) --profile apps --profile tools logs -f $(SERVICE)
+	$(COMPOSE) $(ALL_PROFILES) logs -f $(SERVICE)
 
 .PHONY: topics
 topics: ## List Kafka topics
@@ -56,4 +70,8 @@ psql-telemetry: ## Open psql on veritrace_telemetry as the owner role
 .PHONY: lint
 lint: ## Validate compose file and shell scripts
 	$(COMPOSE) config --quiet
-	@command -v shellcheck >/dev/null && shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh || echo "shellcheck not installed; skipped"
+	shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh scripts/*.sh
+
+.PHONY: check-drift
+check-drift: ## Report differences in shared Go platform packages across sibling service repositories
+	scripts/check-platform-drift.sh
