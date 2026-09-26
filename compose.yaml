@@ -129,10 +129,16 @@ services:
       CORE_UPSTREAM: ${GATEWAY_CORE_UPSTREAM:-host.docker.internal:8080}
       TELEMETRY_UPSTREAM: ${GATEWAY_TELEMETRY_UPSTREAM:-host.docker.internal:8090}
       RELAYER_UPSTREAM: ${GATEWAY_RELAYER_UPSTREAM:-host.docker.internal:8100}
+      DASHBOARD_UPSTREAM: ${GATEWAY_DASHBOARD_UPSTREAM:-host.docker.internal:3001}
+      PWA_UPSTREAM: ${GATEWAY_PWA_UPSTREAM:-host.docker.internal:3002}
+      PORTAL_UPSTREAM: ${GATEWAY_PORTAL_UPSTREAM:-host.docker.internal:3003}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:${GATEWAY_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${DASHBOARD_HOST_PORT:-8001}:8001"
+      - "127.0.0.1:${PWA_HOST_PORT:-8002}:8002"
+      - "127.0.0.1:${PORTAL_HOST_PORT:-8003}:8003"
     volumes:
       - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
 

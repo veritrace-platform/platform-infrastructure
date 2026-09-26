@@ -1,11 +1,11 @@
-# Local gateway: one origin for REST and WebSocket traffic.
-# Routing table: docs/contracts/rest-api.md §2.
+# Local gateway: one origin for REST and WebSocket traffic, and one origin per frontend.
+# Routing table: veritrace/docs/contracts/rest-api.md §2; frontend origins: ADR-0021.
 {
 	admin off
 	auto_https off
 }
 
-:8000 {
+(api_routes) {
 	@telemetry path /ws/* /api/v1/telemetry/* /api/v1/public/telemetry/*
 	handle @telemetry {
 		reverse_proxy {$TELEMETRY_UPSTREAM}
@@ -16,7 +16,40 @@
 		reverse_proxy {$RELAYER_UPSTREAM}
 	}
 
+	@core path /api/v1/* /.well-known/*
+	handle @core {
+		reverse_proxy {$CORE_UPSTREAM}
+	}
+}
+
+# API clients and tools.
+:8000 {
+	import api_routes
 	handle {
 		reverse_proxy {$CORE_UPSTREAM}
+	}
+}
+
+# Enterprise dashboard.
+:8001 {
+	import api_routes
+	handle {
+		reverse_proxy {$DASHBOARD_UPSTREAM}
+	}
+}
+
+# Driver and dock PWA.
+:8002 {
+	import api_routes
+	handle {
+		reverse_proxy {$PWA_UPSTREAM}
+	}
+}
+
+# Public trace portal.
+:8003 {
+	import api_routes
+	handle {
+		reverse_proxy {$PORTAL_UPSTREAM}
 	}
 }

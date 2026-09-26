@@ -23,7 +23,7 @@ jobs:
       - name: Shell scripts
         run: shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh
       - name: Caddyfile
-        run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 caddy:2.11.4-alpine caddy validate --config /etc/caddy/Caddyfile
+        run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 -e DASHBOARD_UPSTREAM=dashboard:3001 -e PWA_UPSTREAM=pwa:3002 -e PORTAL_UPSTREAM=portal:3003 caddy:2.11.4-alpine caddy validate --config /etc/caddy/Caddyfile
 
   smoke:
     name: Stack smoke test
