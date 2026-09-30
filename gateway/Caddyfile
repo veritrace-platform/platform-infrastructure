@@ -3,6 +3,12 @@
 {
 	admin off
 	auto_https off
+	servers {
+		# Frontend servers forward the browser's address in X-Forwarded-For when they call the API, so rate
+		# limits count browsers rather than the frontend server. Locally every peer is private; a public
+		# deployment trusts only its own frontend hosts.
+		trusted_proxies static private_ranges
+	}
 }
 
 (api_routes) {
