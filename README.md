@@ -25,7 +25,9 @@ make ps
 | MQTT | `localhost:1883` |
 | Redis | `localhost:6379` |
 
-Every host port can be changed in `.env`. Run `make help` for all targets, and see the
+Every host port can be changed in `.env`. When `.env.example` gains variables, the next `make up` (or
+`up-apps`, `up-tools`) adds them to `.env` with their example values and keeps the values you changed. Run
+`make help` for all targets, and see the
 [development setup guide](https://github.com/veritrace-platform/veritrace/blob/main/docs/guides/development-setup.md)
 for the full workflow.
 

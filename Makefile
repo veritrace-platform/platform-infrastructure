@@ -10,9 +10,22 @@ APPS_UPSTREAMS := GATEWAY_CORE_UPSTREAM=core-business-service:8080 \
 help: ## List available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.env:
-	@cp .env.example .env
-	@echo "Created .env from .env.example"
+# Creates .env on the first run. Later, when .env.example gains variables, adds them to .env with their
+# example values and leaves every existing value alone.
+.env: .env.example
+	@if [[ ! -f .env ]]; then \
+		cp .env.example .env; \
+		echo "Created .env from .env.example"; \
+	else \
+		while IFS= read -r line; do \
+			[[ "$$line" =~ ^([A-Z0-9_]+)= ]] || continue; \
+			if ! grep -q "^$${BASH_REMATCH[1]}=" .env; then \
+				printf '%s\n' "$$line" >> .env; \
+				echo "Added $${BASH_REMATCH[1]} to .env"; \
+			fi; \
+		done < .env.example; \
+		touch .env; \
+	fi
 
 .PHONY: up
 up: .env ## Start infrastructure and gateway
