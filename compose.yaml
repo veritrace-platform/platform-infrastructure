@@ -219,12 +219,24 @@ services:
       HTTP_ADDR: ":8090"
       ADMIN_ADDR: ":8091"
       DATABASE_URL: postgres://veritrace_telemetry_app:${VERITRACE_TELEMETRY_APP_PASSWORD}@postgres:5432/veritrace_telemetry?sslmode=disable
+      COMPONENTS: ingest,processor
+      KAFKA_BROKERS: kafka:19092
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: telemetry-ingest
+      MQTT_PASSWORD: ${MQTT_INGEST_PASSWORD:?}
+      # A fixed client ID resumes the MQTT session, and its unacknowledged readings, when the container is recreated.
+      MQTT_CLIENT_ID: telemetry-ingest-compose
     ports:
       - "127.0.0.1:8090:8090"
       - "127.0.0.1:8091:8091"
     depends_on:
       telemetry-stream-service-migrate:
         condition: service_completed_successfully
+      # The components consume and produce the topics that kafka-init creates.
+      kafka-init:
+        condition: service_completed_successfully
+      mosquitto:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "/app/telemetry-stream-service", "healthcheck"]
       interval: 10s
