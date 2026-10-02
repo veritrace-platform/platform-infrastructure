@@ -39,6 +39,20 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest -q
 
+  demo:
+    name: Demo kit
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
   smoke:
     name: Stack smoke test
     runs-on: ubuntu-24.04
@@ -73,6 +87,8 @@ jobs:
           docker compose --profile simulator run --rm simulator run normal --sscc 089300010000000018 --ticks 1
           wait "$subscriber"
           grep -q '"sscc":"089300010000000018"' reading.json
+      - name: Verify the demo kit image builds and runs
+        run: docker compose --profile demo run --rm --no-deps demo accounts
       - name: Logs on failure
         if: failure()
         run: docker compose logs

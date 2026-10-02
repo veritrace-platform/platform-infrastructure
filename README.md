@@ -8,6 +8,8 @@ Runtime infrastructure for the VeriTrace platform:
   and ACLs.
 - **IoT fleet simulator:** replays cold-chain scenarios as device readings over MQTT
   ([`simulator/`](simulator/README.md)).
+- **Demonstration kit:** seeds demo companies through the APIs and runs the M1 acceptance scenario
+  ([`demo/`](demo/README.md)).
 
 Project documentation (architecture, domain rules, contracts, decisions, roadmap, guides) lives in the
 project home repository, [`veritrace`](https://github.com/veritrace-platform/veritrace).
@@ -41,6 +43,7 @@ for the full workflow.
 | `make up-tools` | Kafka UI on `http://localhost:8085` |
 | `make tunnel` | Temporary public HTTPS URL (Cloudflare quick tunnel) for testing on phones |
 | `make simulate SSCC=<sscc>` | IoT fleet simulator: replays a scenario (`SCENARIO=sustained-breach`) for the shipments; `make simulate-list` lists the scenarios |
+| `make seed`, `make demo` | Demonstration kit: demo companies and accounts (`make demo-accounts`), and the M1 acceptance run; `make demo-watch ACCOUNT=<email>` prints an account's notifications |
 
 Stop the stack with `make down`. Containers never start automatically with Docker. `make reset` deletes
 data, and `make clean` also removes locally built images.
@@ -54,6 +57,7 @@ kafka/create-topics.sh       topic definitions
 mosquitto/config/            broker config, ACL, credential generation
 gateway/Caddyfile            routing table shared with deployment
 simulator/                   IoT fleet simulator (Python, uv)
+demo/                        demonstration kit: seed, acceptance run, notification watcher (Python, uv)
 ```
 
 ## License

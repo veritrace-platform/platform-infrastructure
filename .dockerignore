@@ -1,0 +1,9 @@
+# Build context of the demo image (demo/Dockerfile): the demo kit and the simulator package it uses.
+*
+!simulator/pyproject.toml
+!simulator/uv.lock
+!simulator/src
+!demo/pyproject.toml
+!demo/uv.lock
+!demo/src
+**/__pycache__
