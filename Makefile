@@ -2,7 +2,8 @@ SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
 COMPOSE := docker compose
-ALL_PROFILES := --profile apps --profile tools --profile tunnel
+SCENARIO ?= normal
+ALL_PROFILES := --profile apps --profile tools --profile tunnel --profile simulator
 APPS_UPSTREAMS := GATEWAY_CORE_UPSTREAM=core-business-service:8080 \
                   GATEWAY_TELEMETRY_UPSTREAM=telemetry-stream-service:8090
 
@@ -42,6 +43,19 @@ up-tools: .env ## Start infrastructure plus developer tools (Kafka UI on :8085)
 .PHONY: tunnel
 tunnel: ## Public HTTPS URL for phone testing (TUNNEL_TARGET=http://host.docker.internal:3000 for a frontend)
 	$(COMPOSE) --profile tunnel run --rm tunnel
+
+.PHONY: simulate
+simulate: .env ## Replay a scenario: SCENARIO=sustained-breach SSCC="<sscc> ..." [ARGS="--devices-per-shipment 2 --loop"]
+	$(if $(SSCC),,$(error SSCC is required, for example make simulate SSCC=089300010000000018))
+	$(COMPOSE) --profile simulator run --rm --build simulator run $(SCENARIO) $(addprefix --sscc ,$(SSCC)) $(ARGS)
+
+.PHONY: simulate-list
+simulate-list: ## List the simulator's scenarios
+	$(COMPOSE) --profile simulator run --rm --build --no-deps simulator list
+
+.PHONY: simulator-check
+simulator-check: ## Lint and test the simulator (needs uv)
+	cd simulator && uv sync --locked && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
 
 .PHONY: down
 down: ## Stop all containers (keeps data)

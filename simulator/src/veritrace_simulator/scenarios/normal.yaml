@@ -1,0 +1,10 @@
+# Readings stay well inside 2–8 °C, the bounds of chilled goods such as fresh milk: no excursion.
+name: normal
+description: A reefer holds 4–5 °C for five minutes; no excursion.
+interval_seconds: 5
+humidity_percent: 62
+jitter_celsius: 0.15
+phases:
+  - name: in range
+    duration_seconds: 300
+    temperature: {start: 4.5, end: 5.0}

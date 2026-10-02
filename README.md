@@ -6,6 +6,8 @@ Runtime infrastructure for the VeriTrace platform:
   Kafka (KRaft), Mosquitto, Redis, and a Caddy gateway.
 - **Bootstrap:** per-service databases and least-privilege roles, Kafka topics, and MQTT credentials
   and ACLs.
+- **IoT fleet simulator:** replays cold-chain scenarios as device readings over MQTT
+  ([`simulator/`](simulator/README.md)).
 
 Project documentation (architecture, domain rules, contracts, decisions, roadmap, guides) lives in the
 project home repository, [`veritrace`](https://github.com/veritrace-platform/veritrace).
@@ -38,6 +40,7 @@ for the full workflow.
 | `make up-apps` | Go services built from sibling repositories, with migrations applied first |
 | `make up-tools` | Kafka UI on `http://localhost:8085` |
 | `make tunnel` | Temporary public HTTPS URL (Cloudflare quick tunnel) for testing on phones |
+| `make simulate SSCC=<sscc>` | IoT fleet simulator: replays a scenario (`SCENARIO=sustained-breach`) for the shipments; `make simulate-list` lists the scenarios |
 
 Stop the stack with `make down`. Containers never start automatically with Docker. `make reset` deletes
 data, and `make clean` also removes locally built images.
@@ -50,6 +53,7 @@ postgres/initdb/             first-start bootstrap: databases and roles
 kafka/create-topics.sh       topic definitions
 mosquitto/config/            broker config, ACL, credential generation
 gateway/Caddyfile            routing table shared with deployment
+simulator/                   IoT fleet simulator (Python, uv)
 ```
 
 ## License

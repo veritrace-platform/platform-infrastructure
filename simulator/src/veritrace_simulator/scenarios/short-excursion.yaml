@@ -1,0 +1,17 @@
+# For 2–8 °C goods. The door stays open for 25 s: five readings above 8 °C span 20 s, under the 30 s that
+# confirms a breach, so the episode ends without an incident.
+name: short-excursion
+description: A door opens for 25 s; readings leave 2–8 °C for less than 30 s, so no breach is confirmed.
+interval_seconds: 5
+humidity_percent: 64
+jitter_celsius: 0.1
+phases:
+  - name: in range
+    duration_seconds: 60
+    temperature: 4.5
+  - name: door open
+    duration_seconds: 25
+    temperature: {start: 9.0, end: 9.6}
+  - name: recovered
+    duration_seconds: 60
+    temperature: {start: 6.5, end: 4.8}
