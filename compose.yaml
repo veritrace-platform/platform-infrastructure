@@ -5,6 +5,7 @@ name: veritrace
 # Profile "apps": Go services built from sibling repositories.
 # Profile "tools": developer tooling (Kafka UI).
 # Profile "tunnel": temporary public HTTPS URL for testing on phones (Cloudflare quick tunnel).
+# Profile "simulator": IoT fleet simulator, run on demand (`make simulate`).
 #
 # Ports bind to 127.0.0.1 only, containers restart on crashes but not when Docker starts, and memory is
 # capped per container so the stack never takes over the workstation.
@@ -229,6 +230,22 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+
+  # --- profile: simulator --------------------------------------------------
+
+  simulator:
+    profiles: ["simulator"]
+    image: veritrace/simulator:dev
+    mem_limit: 128m
+    build: ./simulator
+    environment:
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: fleet-simulator
+      MQTT_PASSWORD: ${MQTT_SIMULATOR_PASSWORD:?}
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: "no"
 
   # --- profile: tools ------------------------------------------------------
 

@@ -15,3 +15,19 @@ updates:
     target-branch: develop
     commit-message:
       prefix: ci
+
+  - package-ecosystem: uv
+    directory: /simulator
+    schedule:
+      interval: weekly
+    target-branch: develop
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: docker
+    directory: /simulator
+    schedule:
+      interval: weekly
+    target-branch: develop
+    commit-message:
+      prefix: build
