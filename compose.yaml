@@ -175,11 +175,16 @@ services:
       ADMIN_ADDR: ":8081"
       DATABASE_URL: postgres://veritrace_core_app:${VERITRACE_CORE_APP_PASSWORD}@postgres:5432/veritrace_core?sslmode=disable
       JWT_SIGNING_KEYS: ${VERITRACE_CORE_JWT_SIGNING_KEYS:?set VERITRACE_CORE_JWT_SIGNING_KEYS in .env}
+      PICKUP_CODE_PEPPER: ${VERITRACE_CORE_PICKUP_CODE_PEPPER:?set VERITRACE_CORE_PICKUP_CODE_PEPPER in .env}
+      KAFKA_BROKERS: kafka:19092
     ports:
       - "127.0.0.1:8080:8080"
       - "127.0.0.1:8081:8081"
     depends_on:
       core-business-service-migrate:
+        condition: service_completed_successfully
+      # The outbox relay publishes to shipment.events, which kafka-init creates.
+      kafka-init:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "/app/core-business-service", "healthcheck"]
