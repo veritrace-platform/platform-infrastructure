@@ -226,6 +226,10 @@ services:
       MQTT_PASSWORD: ${MQTT_INGEST_PASSWORD:?}
       # A fixed client ID resumes the MQTT session, and its unacknowledged readings, when the container is recreated.
       MQTT_CLIENT_ID: telemetry-ingest-compose
+      # Access tokens are verified with core's public keys, which are fetched when the first token arrives.
+      JWKS_URL: http://core-business-service:8080/.well-known/jwks.json
+      # Browsers reach the WebSocket through the gateway, on their own origin, so no other origin is allowed.
+      WS_ALLOWED_ORIGINS: ""
     ports:
       - "127.0.0.1:8090:8090"
       - "127.0.0.1:8091:8091"
