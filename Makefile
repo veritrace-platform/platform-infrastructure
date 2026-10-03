@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 
 COMPOSE := docker compose
 SCENARIO ?= normal
-ALL_PROFILES := --profile apps --profile tools --profile tunnel --profile simulator
+ALL_PROFILES := --profile apps --profile tools --profile tunnel --profile simulator --profile demo
 APPS_UPSTREAMS := GATEWAY_CORE_UPSTREAM=core-business-service:8080 \
                   GATEWAY_TELEMETRY_UPSTREAM=telemetry-stream-service:8090
 
@@ -56,6 +56,27 @@ simulate-list: ## List the simulator's scenarios
 .PHONY: simulator-check
 simulator-check: ## Lint and test the simulator (needs uv)
 	cd simulator && uv sync --locked && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
+
+.PHONY: seed
+seed: .env ## Seed the demo companies, users, catalog, and lots through the APIs (idempotent)
+	$(COMPOSE) --profile demo run --rm --build demo seed
+
+.PHONY: demo
+demo: .env ## Run the M1 acceptance scenario against the running stack (about 2 minutes)
+	$(COMPOSE) --profile demo run --rm --build demo scenario
+
+.PHONY: demo-watch
+demo-watch: .env ## Print a demo account's notifications: ACCOUNT=admin@d7mart.example [SSCC="<sscc> ..."]
+	$(if $(ACCOUNT),,$(error ACCOUNT is required, for example make demo-watch ACCOUNT=admin@d7mart.example))
+	$(COMPOSE) --profile demo run --rm --build demo watch $(ACCOUNT) $(addprefix --sscc ,$(SSCC))
+
+.PHONY: demo-accounts
+demo-accounts: .env ## List the demo accounts
+	$(COMPOSE) --profile demo run --rm --build --no-deps demo accounts
+
+.PHONY: demo-check
+demo-check: ## Lint and test the demonstration kit (needs uv)
+	cd demo && uv sync --locked && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
 
 .PHONY: down
 down: ## Stop all containers (keeps data)

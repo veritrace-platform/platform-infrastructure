@@ -31,3 +31,19 @@ updates:
     target-branch: develop
     commit-message:
       prefix: build
+
+  - package-ecosystem: uv
+    directory: /demo
+    schedule:
+      interval: weekly
+    target-branch: develop
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: docker
+    directory: /demo
+    schedule:
+      interval: weekly
+    target-branch: develop
+    commit-message:
+      prefix: build
