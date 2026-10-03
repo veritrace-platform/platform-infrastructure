@@ -105,7 +105,7 @@ logs: ## Follow logs (SERVICE=<name> to filter)
 
 .PHONY: topics
 topics: ## List Kafka topics
-	$(COMPOSE) exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe
+	$(COMPOSE) exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --describe
 
 .PHONY: psql-core
 psql-core: ## Open psql on veritrace_core as the owner role
