@@ -78,6 +78,9 @@ demo-accounts: .env ## List the demo accounts
 demo-check: ## Lint and test the demonstration kit (needs uv)
 	cd demo && uv sync --locked && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
 
+.PHONY: check
+check: lint simulator-check demo-check ## Run the checks of CI that need no running stack
+
 .PHONY: down
 down: ## Stop all containers (keeps data)
 	$(COMPOSE) $(ALL_PROFILES) down
@@ -105,7 +108,7 @@ logs: ## Follow logs (SERVICE=<name> to filter)
 
 .PHONY: topics
 topics: ## List Kafka topics
-	$(COMPOSE) exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe
+	$(COMPOSE) exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --describe
 
 .PHONY: psql-core
 psql-core: ## Open psql on veritrace_core as the owner role
