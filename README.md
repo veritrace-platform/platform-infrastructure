@@ -48,6 +48,11 @@ for the full workflow.
 Stop the stack with `make down`. Containers never start automatically with Docker. `make reset` deletes
 data, and `make clean` also removes locally built images.
 
+## Checks
+
+`make check` runs what CI checks without a running stack: the compose file and shell scripts, and the lint and
+tests of the simulator and the demonstration kit (`uv` required). CI also starts the stack and runs a smoke test.
+
 ## Layout
 
 ```

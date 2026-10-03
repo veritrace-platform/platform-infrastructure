@@ -78,6 +78,9 @@ demo-accounts: .env ## List the demo accounts
 demo-check: ## Lint and test the demonstration kit (needs uv)
 	cd demo && uv sync --locked && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
 
+.PHONY: check
+check: lint simulator-check demo-check ## Run the checks of CI that need no running stack
+
 .PHONY: down
 down: ## Stop all containers (keeps data)
 	$(COMPOSE) $(ALL_PROFILES) down
