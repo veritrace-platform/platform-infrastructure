@@ -1,7 +1,7 @@
 # Demonstration kit. Build context: the repository root, because the kit uses the simulator package.
 FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
-FROM python:3.13.15-slim-trixie AS build
+FROM python:3.14.7-slim-trixie AS build
 COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -15,7 +15,7 @@ RUN uv sync --locked --no-dev --no-install-project --no-editable
 COPY demo/src ./src
 RUN uv sync --locked --no-dev --no-editable
 
-FROM python:3.13.15-slim-trixie
+FROM python:3.14.7-slim-trixie
 RUN useradd --system --uid 10001 --no-create-home demo
 COPY --from=build /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:$PATH \
