@@ -1,5 +1,5 @@
 # Demonstration kit. Build context: the repository root, because the kit uses the simulator package.
-FROM ghcr.io/astral-sh/uv:0.12.19 AS uv
+FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
 FROM python:3.13.15-slim-trixie AS build
 COPY --from=uv /uv /usr/local/bin/uv
