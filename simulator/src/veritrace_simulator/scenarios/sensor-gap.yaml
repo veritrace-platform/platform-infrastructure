@@ -1,0 +1,24 @@
+# For 2–8 °C goods. Two 20 s excursions are separated by 20 s without readings. The gap between the last reading
+# of the first and the first reading of the second (25 s) is longer than 15 s, so they are two episodes, each
+# shorter than 30 s, and no breach is confirmed: missing data is not evidence of a sustained excursion.
+name: sensor-gap
+description: The sensor goes silent between two short excursions; the gap ends the episode, so no breach.
+interval_seconds: 5
+humidity_percent: 63
+jitter_celsius: 0.1
+phases:
+  - name: in range
+    duration_seconds: 60
+    temperature: 4.5
+  - name: excursion
+    duration_seconds: 20
+    temperature: 9.5
+  - name: sensor offline
+    duration_seconds: 20
+    silent: true
+  - name: excursion again
+    duration_seconds: 20
+    temperature: 9.5
+  - name: recovered
+    duration_seconds: 60
+    temperature: 4.5

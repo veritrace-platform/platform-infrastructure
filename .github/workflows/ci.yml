@@ -25,6 +25,34 @@ jobs:
       - name: Caddyfile
         run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 -e DASHBOARD_UPSTREAM=dashboard:3001 -e PWA_UPSTREAM=pwa:3002 -e PORTAL_UPSTREAM=portal:3003 caddy:2.11.4-alpine caddy validate --config /etc/caddy/Caddyfile
 
+  simulator:
+    name: Simulator
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: simulator
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
+  demo:
+    name: Demo kit
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
   smoke:
     name: Stack smoke test
     runs-on: ubuntu-24.04
@@ -41,13 +69,26 @@ jobs:
             "SELECT 1 FROM pg_extension WHERE extname = 'timescaledb'" | grep -qx 1
       - name: Verify Kafka topics
         run: |
-          topics=$(docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list)
+          topics=$(docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list)
           for t in iot.telemetry.raw iot.telemetry.dlq shipment.events telemetry.incidents; do
             grep -qx "$t" <<<"$topics"
           done
       - name: Verify MQTT rejects anonymous clients
         run: |
           ! docker compose exec -T mosquitto mosquitto_pub -h localhost -t probe -m x
+      - name: Verify the simulator publishes readings that the ingest user receives
+        run: |
+          docker compose --profile simulator build simulator
+          docker compose exec -T mosquitto sh -c \
+            'mosquitto_sub -u telemetry-ingest -P "$MQTT_INGEST_PASSWORD" -t "veritrace/v1/devices/+/telemetry" -C 1 -W 30' \
+            > reading.json &
+          subscriber=$!
+          sleep 2
+          docker compose --profile simulator run --rm simulator run normal --sscc 089300010000000018 --ticks 1
+          wait "$subscriber"
+          grep -q '"sscc":"089300010000000018"' reading.json
+      - name: Verify the demo kit image builds and runs
+        run: docker compose --profile demo run --rm --no-deps demo accounts
       - name: Logs on failure
         if: failure()
         run: docker compose logs

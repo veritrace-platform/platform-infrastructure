@@ -1,0 +1,17 @@
+# For 2–8 °C goods. The compressor fails for 90 s: readings stay above 8 °C, the detector confirms a breach 30 s
+# after the first of them, and resolves it at the first reading back in range.
+name: sustained-breach
+description: The compressor fails for 90 s; a breach is confirmed after 30 s and resolved when it recovers.
+interval_seconds: 5
+humidity_percent: 66
+jitter_celsius: 0.1
+phases:
+  - name: in range
+    duration_seconds: 60
+    temperature: 4.5
+  - name: compressor failure
+    duration_seconds: 90
+    temperature: {start: 9.0, end: 11.5}
+  - name: recovered
+    duration_seconds: 60
+    temperature: {start: 6.0, end: 4.5}

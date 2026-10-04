@@ -1,0 +1,38 @@
+[project]
+name = "veritrace-simulator"
+version = "0.1.0"
+description = "IoT fleet simulator: replays cold-chain scenarios as device readings over MQTT"
+requires-python = ">=3.13"
+dependencies = [
+    "paho-mqtt>=2.1",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+veritrace-simulator = "veritrace_simulator.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.14",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ANN"]
+ignore = ["ANN401"]
+# Ranges such as 2–8 °C are written with an en dash, as in the documentation.
+allowed-confusables = ["–"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
