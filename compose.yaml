@@ -24,7 +24,7 @@ x-hardened: &hardened
 services:
   postgres:
     <<: *restart
-    image: timescale/timescaledb:2.30.1-pg18
+    image: timescale/timescaledb:2.30.2-pg18
     mem_limit: 1g
     environment:
       POSTGRES_USER: postgres
