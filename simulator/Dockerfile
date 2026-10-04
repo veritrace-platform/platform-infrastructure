@@ -1,5 +1,5 @@
 # IoT fleet simulator (ADR-0019). Build context: this directory.
-FROM ghcr.io/astral-sh/uv:0.12.19 AS uv
+FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
 FROM python:3.14.7-slim-trixie AS build
 COPY --from=uv /uv /usr/local/bin/uv
