@@ -41,7 +41,7 @@ up-tools: .env ## Start infrastructure plus developer tools (Kafka UI on :8085)
 	$(COMPOSE) --profile tools up -d --wait
 
 .PHONY: tunnel
-tunnel: ## Public HTTPS URL for phone testing (TUNNEL_TARGET=http://host.docker.internal:3000 for a frontend)
+tunnel: ## Public HTTPS URL for phone testing: TUNNEL_TARGET=http://gateway:8002 for the PWA (default: the API on :8000)
 	$(COMPOSE) --profile tunnel run --rm tunnel
 
 .PHONY: simulate
