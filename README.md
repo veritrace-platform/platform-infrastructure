@@ -41,7 +41,7 @@ for the full workflow.
 | --- | --- |
 | `make up-apps` | Go services built from sibling repositories, with migrations applied first |
 | `make up-tools` | Kafka UI on `http://localhost:8085` |
-| `make tunnel` | Temporary public HTTPS URL (Cloudflare quick tunnel) for testing on phones |
+| `make tunnel` | Temporary public HTTPS URL (Cloudflare quick tunnel) for testing on phones; `TUNNEL_TARGET=http://gateway:8002` serves the PWA's origin |
 | `make simulate SSCC=<sscc>` | IoT fleet simulator: replays a scenario (`SCENARIO=sustained-breach`) for the shipments; `make simulate-list` lists the scenarios |
 | `make seed`, `make demo` | Demonstration kit: demo companies and accounts (`make demo-accounts`), and the M1 acceptance run; `make demo-watch ACCOUNT=<email>` prints an account's notifications |
 
