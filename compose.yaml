@@ -132,7 +132,7 @@ services:
 
   gateway:
     <<: *restart
-    image: caddy:2.11.4-alpine
+    image: caddy:2.11.7-alpine
     mem_limit: 128m
     environment:
       CORE_UPSTREAM: ${GATEWAY_CORE_UPSTREAM:-host.docker.internal:8080}
