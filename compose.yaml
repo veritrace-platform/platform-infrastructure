@@ -317,7 +317,7 @@ services:
 
   tunnel:
     profiles: ["tunnel"]
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.3
     mem_limit: 128m
     command: ["tunnel", "--no-autoupdate", "--url", "${TUNNEL_TARGET:-http://gateway:8000}"]
     extra_hosts:
