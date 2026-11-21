@@ -8,11 +8,11 @@ name: veritrace
 # Profile "simulator": IoT fleet simulator, run on demand (`make simulate`).
 # Profile "demo": demonstration kit, run on demand (`make seed`, `make demo`).
 #
-# Ports bind to 127.0.0.1 only, containers restart on crashes but not when Docker starts, and memory is
-# capped per container so the stack never takes over the workstation.
+# Ports bind to 127.0.0.1 only, containers never restart on their own (not after a crash, not when Docker
+# starts), and memory is capped per container so the stack never takes over the workstation.
 
 x-restart: &restart
-  restart: on-failure:3
+  restart: "no"
 
 # Images built from this workspace run on a read-only root filesystem, without Linux capabilities, and cannot gain
 # privileges (veritrace/docs/architecture/security.md §5). They write nothing to disk.
