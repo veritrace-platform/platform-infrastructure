@@ -2,6 +2,7 @@
 
     veritrace-demo seed         register the demo companies and create their data (idempotent)
     veritrace-demo scenario     run the M1 acceptance scenario
+    veritrace-demo evaluate     measure the excursion warnings on a synthetic journey of known outcome
     veritrace-demo watch EMAIL  print the notifications of a demo account, optionally following SSCCs
     veritrace-demo accounts     list the demo accounts
 
@@ -21,7 +22,7 @@ import threading
 from collections.abc import Sequence
 from types import FrameType
 
-from veritrace_demo import fixtures, scenario
+from veritrace_demo import evaluation, fixtures, scenario
 from veritrace_demo.client import Api, ApiError
 from veritrace_demo.notifications import Listener, websocket_url
 from veritrace_demo.seed import SeedError, seed
@@ -48,19 +49,36 @@ def main(argv: Sequence[str] | None = None) -> int:
             case "seed":
                 return run_seed(api_url, password)
             case "scenario":
-                settings = scenario.Settings(
-                    api_url=api_url,
-                    password=password,
-                    mqtt_url=os.environ.get("MQTT_URL", "mqtt://localhost:1883"),
-                    mqtt_username=os.environ.get("MQTT_USERNAME", "fleet-simulator"),
-                    mqtt_password=_required("MQTT_PASSWORD"),
-                )
-                return scenario.run(settings)
+                return scenario.run(_settings(api_url, password))
+            case "evaluate":
+                return run_evaluation(_settings(api_url, password), args.seed, args.episodes, args.report)
             case _:
                 return watch(api_url, password, args.email, args.sscc)
     except ValueError as err:
         print(err, file=sys.stderr)
         return 2
+
+
+def _settings(api_url: str, password: str) -> scenario.Settings:
+    return scenario.Settings(
+        api_url=api_url,
+        password=password,
+        mqtt_url=os.environ.get("MQTT_URL", "mqtt://localhost:1883"),
+        mqtt_username=os.environ.get("MQTT_USERNAME", "fleet-simulator"),
+        mqtt_password=_required("MQTT_PASSWORD"),
+    )
+
+
+def run_evaluation(settings: scenario.Settings, seed_value: int, episodes: int, report: str | None) -> int:
+    try:
+        result = evaluation.evaluate(settings, seed_value, episodes)
+    except (scenario.Failed, ApiError, TimeoutError, OSError) as err:
+        print(f"The evaluation failed: {err}", file=sys.stderr)
+        return 1
+    if report:
+        evaluation.write_report(result, report)
+        print(f"\nReport written to {report}.")
+    return 0
 
 
 def run_seed(api_url: str, password: str) -> int:
@@ -124,6 +142,20 @@ def _describe(message: dict) -> str:
                 f"{message['sent_at']}  resolved  {data['sscc']}  after {data['duration_seconds']} s, "
                 f"peak {data['extreme_temperature_celsius']} °C"
             )
+        case "cold_chain.warning_issued":
+            return (
+                f"{message['sent_at']}  WARNING   {data['sscc']}  {data['temperature_celsius']} °C, "
+                f"{data['slope_celsius_per_minute']:+} °C/min: {data['bound_celsius']} °C expected at "
+                f"{data['predicted_excursion_at']}"
+            )
+        case "cold_chain.warning_closed":
+            lead = f", {data['lead_time_seconds']} s ahead" if data.get("lead_time_seconds") is not None else ""
+            return f"{message['sent_at']}  warning   {data['sscc']}  closed {data['outcome']}{lead}"
+        case "cold_chain.shelf_life_reduced":
+            return (
+                f"{message['sent_at']}  SHELF     {data['sscc']}  {data['status']}: {data['shelf_life_loss_hours']} h "
+                f"lost, now expires {data['estimated_expiration_date']} (label {data['label_expiration_date']})"
+            )
         case "shipment.recalled":
             return f"{message['sent_at']}  RECALL    {data['sscc']}  lot {data['lot_number']}: {data['reason']}"
         case "subscribed" | "unsubscribed":
@@ -160,6 +192,12 @@ def _parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("seed", help="register the demo companies and create their data (idempotent)")
     commands.add_parser("scenario", help="run the M1 acceptance scenario")
+    evaluate_cmd = commands.add_parser("evaluate", help="measure the excursion warnings on a synthetic journey")
+    evaluate_cmd.add_argument("--seed", type=int, default=7, help="seed of the journey (default 7)")
+    evaluate_cmd.add_argument(
+        "--episodes", type=int, default=20, help="episodes in the journey, about 25 minutes each (default 20)"
+    )
+    evaluate_cmd.add_argument("--report", help="also write the report as JSON to this file")
     watch_cmd = commands.add_parser("watch", help="print the notifications of a demo account")
     watch_cmd.add_argument("email", help="the account, for example admin@sgfresh.example")
     watch_cmd.add_argument("--sscc", action="append", default=[], help="also follow this SSCC's live readings")
