@@ -19,5 +19,6 @@ create iot.telemetry.raw 6 "$seven_days_ms"
 create iot.telemetry.dlq 1 "$fourteen_days_ms"
 create shipment.events 6 -1
 create telemetry.incidents 6 -1
+create telemetry.forecasts 6 "$seven_days_ms"
 
 "$topics_cmd" --bootstrap-server "$bootstrap" --list
