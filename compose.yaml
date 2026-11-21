@@ -96,7 +96,7 @@ services:
 
   mosquitto:
     <<: *restart
-    image: eclipse-mosquitto:2.0.22
+    image: eclipse-mosquitto:2.0.23
     mem_limit: 64m
     entrypoint: ["/bin/sh", "/mosquitto/config/entrypoint.sh"]
     environment:
