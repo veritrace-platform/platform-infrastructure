@@ -23,7 +23,7 @@ jobs:
       - name: Shell scripts
         run: shellcheck postgres/initdb/*.sh kafka/*.sh mosquitto/config/*.sh
       - name: Caddyfile
-        run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 -e DASHBOARD_UPSTREAM=dashboard:3001 -e PWA_UPSTREAM=pwa:3002 -e PORTAL_UPSTREAM=portal:3003 caddy:2.11.4-alpine caddy validate --config /etc/caddy/Caddyfile
+        run: docker run --rm -v "$PWD/gateway:/etc/caddy:ro" -e CORE_UPSTREAM=core:8080 -e TELEMETRY_UPSTREAM=telemetry:8090 -e RELAYER_UPSTREAM=relayer:8100 -e DASHBOARD_UPSTREAM=dashboard:3001 -e PWA_UPSTREAM=pwa:3002 -e PORTAL_UPSTREAM=portal:3003 caddy:2.11.8-alpine caddy validate --config /etc/caddy/Caddyfile
 
   simulator:
     name: Simulator
@@ -33,7 +33,7 @@ jobs:
         working-directory: simulator
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
@@ -47,7 +47,7 @@ jobs:
         working-directory: demo
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .

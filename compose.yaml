@@ -8,11 +8,11 @@ name: veritrace
 # Profile "simulator": IoT fleet simulator, run on demand (`make simulate`).
 # Profile "demo": demonstration kit, run on demand (`make seed`, `make demo`).
 #
-# Ports bind to 127.0.0.1 only, containers restart on crashes but not when Docker starts, and memory is
-# capped per container so the stack never takes over the workstation.
+# Ports bind to 127.0.0.1 only, containers never restart on their own (not after a crash, not when Docker
+# starts), and memory is capped per container so the stack never takes over the workstation.
 
 x-restart: &restart
-  restart: on-failure:3
+  restart: "no"
 
 # Images built from this workspace run on a read-only root filesystem, without Linux capabilities, and cannot gain
 # privileges (veritrace/docs/architecture/security.md §5). They write nothing to disk.
@@ -24,7 +24,7 @@ x-hardened: &hardened
 services:
   postgres:
     <<: *restart
-    image: timescale/timescaledb:2.30.2-pg18
+    image: timescale/timescaledb:2.31.0-pg18
     mem_limit: 1g
     environment:
       POSTGRES_USER: postgres
@@ -115,7 +115,7 @@ services:
 
   redis:
     <<: *restart
-    image: redis:8.10.2-alpine
+    image: redis:8.10.3-alpine
     mem_limit: 256m
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?}"]
     environment:
@@ -132,7 +132,7 @@ services:
 
   gateway:
     <<: *restart
-    image: caddy:2.11.4-alpine
+    image: caddy:2.11.8-alpine
     mem_limit: 128m
     environment:
       CORE_UPSTREAM: ${GATEWAY_CORE_UPSTREAM:-host.docker.internal:8080}
@@ -317,7 +317,7 @@ services:
 
   tunnel:
     profiles: ["tunnel"]
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.7
     mem_limit: 128m
     command: ["tunnel", "--no-autoupdate", "--url", "${TUNNEL_TARGET:-http://gateway:8000}"]
     extra_hosts:
