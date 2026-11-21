@@ -55,6 +55,29 @@ def test_sensor_gap_splits_the_excursion():
     assert longest_excursion(payloads, max_gap=float("inf")) >= CONFIRM_SECONDS
 
 
+def test_door_opening_stays_within_the_bounds():
+    # A warning forecasts the maximum, but no excursion follows.
+    payloads = readings("door-opening")
+    assert longest_excursion(payloads) == 0
+    assert max(p["temperature_c"] for p in payloads) > 6.5
+
+
+def test_gradual_warming_builds_up_to_a_breach():
+    payloads = readings("gradual-warming")
+    assert longest_excursion(payloads) >= CONFIRM_SECONDS
+    # Minutes of in-bounds warming precede the first reading above the maximum.
+    first_above = next(p["ts"] for p in payloads if p["temperature_c"] > T_MAX)
+    warming_from = next(p["ts"] for p in payloads if p["temperature_c"] > 5.5)
+    assert (first_above - warming_from) / 1000 >= 180
+    assert T_MIN <= payloads[-1]["temperature_c"] <= T_MAX
+
+
+def test_reefer_failure_lasts_hours():
+    loaded = scenario.load("reefer-failure")
+    assert loaded.duration_seconds > 4 * 3600
+    assert longest_excursion(readings("reefer-failure")) > 3 * 3600
+
+
 def test_payload_format():
     payload = readings("normal")[0]
     # docs/contracts/messaging.md section 1; the device ID is in the topic, never in the payload.

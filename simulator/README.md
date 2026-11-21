@@ -18,6 +18,12 @@ breach rules they exercise are in
 | `short-excursion` | A door opens for 25 s | Excursion shorter than 30 s; no breach |
 | `sustained-breach` | The compressor fails for 90 s | Breach confirmed 30 s into the excursion, resolved when the temperature recovers |
 | `sensor-gap` | Two 20 s excursions with 20 s of silence between them | The gap ends the episode; no breach |
+| `gradual-warming` | Cooling fades and the load warms 0.75 °C per minute | An excursion warning minutes ahead, then a breach; the warning closes as `BREACHED` with its lead time |
+| `door-opening` | A door stays open for three minutes, up to 7.2 °C | A warning, cleared when the load cools back; no breach |
+| `reefer-failure` | The unit fails for three hours at 22 °C (4 h 20 min in all) | A warning, a breach of hours, and the shelf life drops to `REDUCED` (about 12 h of extra aging at Q10 3); replay it with `--backdate 4h30m` |
+
+The warnings and shelf-life rules are in
+[cold-chain-monitoring.md §7–§8](https://github.com/veritrace-platform/veritrace/blob/main/docs/domain/cold-chain-monitoring.md#7-excursion-warnings).
 
 A scenario is a YAML file of phases; see `src/veritrace_simulator/scenario.py` for the format. Pass a path
 instead of a name to replay your own.
@@ -36,6 +42,7 @@ make simulate SCENARIO=normal SSCC="089300010000000018 089345670000000017" ARGS=
 cd simulator
 MQTT_PASSWORD=simulator-dev uv run veritrace-simulator run sustained-breach --sscc 089300010000000018
 uv run veritrace-simulator run sensor-gap --sscc 089300010000000018 --dry-run   # print instead of publishing
+make simulate SCENARIO=reefer-failure SSCC=089300010000000018 ARGS="--backdate 4h30m"   # hours of journey in seconds
 ```
 
 | Option | Effect |
@@ -45,6 +52,7 @@ uv run veritrace-simulator run sensor-gap --sscc 089300010000000018 --dry-run   
 | `--loop` | Repeat the scenario until stopped |
 | `--ticks` | Stop after this many intervals |
 | `--seed` | Make the temperature noise reproducible |
+| `--backdate` | Start this long ago, such as `20m` or `4h30m` (at most `23h`): readings already due are published at once with their past times, and the rest follow in real time |
 | `--dry-run` | Print the readings at once instead of publishing them |
 
 The broker connection comes from `MQTT_URL` (default `mqtt://localhost:1883`), `MQTT_USERNAME` (default

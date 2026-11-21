@@ -14,7 +14,15 @@ phases:
 
 def test_bundled_scenarios_load():
     names = scenario.bundled()
-    assert names == ["normal", "sensor-gap", "short-excursion", "sustained-breach"]
+    assert names == [
+        "door-opening",
+        "gradual-warming",
+        "normal",
+        "reefer-failure",
+        "sensor-gap",
+        "short-excursion",
+        "sustained-breach",
+    ]
     for name in names:
         loaded = scenario.load(name)
         assert loaded.name == name
