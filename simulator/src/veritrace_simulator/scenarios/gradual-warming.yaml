@@ -1,0 +1,24 @@
+# For 2–8 °C goods. The reefer loses cooling slowly: after three steady minutes the temperature rises 0.75 °C per
+# minute. The trend points at 8 °C minutes ahead, so an excursion warning comes well before the breach, which is
+# confirmed 30 s after the first reading above 8 °C. The warning is closed as BREACHED, with its lead time.
+name: gradual-warming
+description: Cooling fades and the load warms 0.75 °C/min; warned minutes before the breach, which follows.
+interval_seconds: 5
+humidity_percent: 65
+jitter_celsius: 0.1
+phases:
+  - name: holding
+    duration_seconds: 180
+    temperature: 4.5
+  - name: cooling fades
+    duration_seconds: 480
+    temperature: {start: 4.5, end: 10.5}
+  - name: breach
+    duration_seconds: 120
+    temperature: 10.5
+  - name: recovering
+    duration_seconds: 180
+    temperature: {start: 10.5, end: 5.0}
+  - name: recovered
+    duration_seconds: 120
+    temperature: 5.0

@@ -70,7 +70,7 @@ jobs:
       - name: Verify Kafka topics
         run: |
           topics=$(docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list)
-          for t in iot.telemetry.raw iot.telemetry.dlq shipment.events telemetry.incidents; do
+          for t in iot.telemetry.raw iot.telemetry.dlq shipment.events telemetry.incidents telemetry.forecasts; do
             grep -qx "$t" <<<"$topics"
           done
       - name: Verify MQTT rejects anonymous clients

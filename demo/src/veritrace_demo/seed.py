@@ -79,6 +79,12 @@ def seed_company(api: Api, company: Company, password: str, today: dt.date, seed
     for item in company.products:
         if item.gtin in products:
             seeded.existing["products"] += 1
+            # Products seeded before they had a shelf-life Q10 took the default; bring them in line.
+            if products[item.gtin].get("shelf_life_q10") != item.shelf_life_q10:
+                products[item.gtin] = api.patch(
+                    f"/api/v1/products/{products[item.gtin]['id']}", token, {"shelf_life_q10": item.shelf_life_q10}
+                )
+                log.info("set the shelf-life Q10 of product %s to %s", item.gtin, item.shelf_life_q10)
             continue
         products[item.gtin] = api.post(
             "/api/v1/products",
@@ -89,6 +95,7 @@ def seed_company(api: Api, company: Company, password: str, today: dt.date, seed
                 "description": item.description,
                 "min_temp_celsius": item.min_temp_celsius,
                 "max_temp_celsius": item.max_temp_celsius,
+                "shelf_life_q10": item.shelf_life_q10,
             },
         )
         seeded.created["products"] += 1
