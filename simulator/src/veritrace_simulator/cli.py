@@ -2,6 +2,7 @@
 
     veritrace-simulator list
     veritrace-simulator run sustained-breach --sscc 089300010000000018 [--devices-per-shipment 2] [--loop]
+    veritrace-simulator run reefer-failure --sscc 089300010000000018 --backdate 4h30m
 
 The broker connection comes from MQTT_URL (default mqtt://localhost:1883), MQTT_USERNAME (default
 fleet-simulator), and MQTT_PASSWORD.
@@ -12,6 +13,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import signal
 import sys
 import threading
@@ -24,6 +26,9 @@ from veritrace_simulator.fleet import devices_for, timeline
 from veritrace_simulator.publisher import MqttPublisher, PrintPublisher, Publisher, PublishError
 
 log = logging.getLogger("veritrace_simulator")
+
+# The telemetry service refuses readings more than 24 hours old; a backdated replay stays well within that.
+MAX_BACKDATE_SECONDS = 23 * 3600
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -49,7 +54,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         log.error("%s", err)
         return 1
     try:
-        return play(scenario, devices, publisher, stop, loop=args.loop, max_ticks=args.ticks, realtime=not args.dry_run)
+        return play(
+            scenario,
+            devices,
+            publisher,
+            stop,
+            loop=args.loop,
+            max_ticks=args.ticks,
+            realtime=not args.dry_run,
+            backdate_seconds=args.backdate,
+        )
     except PublishError as err:
         log.error("%s", err)
         return 1
@@ -66,28 +80,39 @@ def play(
     loop: bool = False,
     max_ticks: int | None = None,
     realtime: bool = True,
+    backdate_seconds: float = 0.0,
     clock: Callable[[], float] = time.time,
 ) -> int:
-    """Publish the scenario's readings, one tick per interval of wall-clock time unless realtime is false."""
+    """Publish the scenario's readings, one tick per interval of wall-clock time unless realtime is false.
+
+    A backdated replay starts backdate_seconds in the past: the ticks that are already due are published at once,
+    with their past device times, and the rest follow in real time.
+    """
     log.info(
-        "playing %s (%.0f s) for %d device(s) on %d shipment(s)",
+        "playing %s (%.0f s) for %d device(s) on %d shipment(s)%s",
         scenario.name,
         scenario.duration_seconds,
         len(devices),
         len({d.sscc for d in devices}),
+        f", starting {backdate_seconds:.0f} s ago" if backdate_seconds else "",
     )
-    start = clock()
+    start = clock() - backdate_seconds
     played = 0
+    phase = None
     while True:
         for tick in timeline(scenario, devices, int(start * 1000)):
+            catching_up = start + tick.elapsed_seconds < clock()
             if realtime and stop.wait(max(0.0, start + tick.elapsed_seconds - clock())):
                 return 0
             if stop.is_set():
                 return 0
             for message in tick.messages:
                 publisher.publish(message.device.topic, message.payload)
-            temperatures = ", ".join(f"{m.payload['temperature_c']:.2f}" for m in tick.messages) or "silent"
-            log.info("+%4.0fs %-20s %s", tick.elapsed_seconds, tick.phase, temperatures)
+            # While catching up, only phase changes are worth a line.
+            if not catching_up or tick.phase != phase:
+                temperatures = ", ".join(f"{m.payload['temperature_c']:.2f}" for m in tick.messages) or "silent"
+                log.info("+%4.0fs %-20s %s", tick.elapsed_seconds, tick.phase, temperatures)
+            phase = tick.phase
             played += 1
             if max_ticks is not None and played >= max_ticks:
                 return 0
@@ -126,5 +151,25 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--loop", action="store_true", help="repeat the scenario until stopped")
     run.add_argument("--ticks", type=int, help="stop after this many intervals")
     run.add_argument("--seed", type=int, help="seed of the temperature noise, for reproducible runs")
+    run.add_argument(
+        "--backdate",
+        type=duration,
+        default=0.0,
+        help="start this long ago, such as 90s, 20m, or 4h30m: due readings are published at once (at most 23h)",
+    )
     run.add_argument("--dry-run", action="store_true", help="print the readings at once instead of publishing them")
     return parser
+
+
+def duration(text: str) -> float:
+    """Parse a duration such as 90s, 20m, 4h30m, or 1h15m30s into seconds."""
+    match = re.fullmatch(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", text.strip())
+    if not text.strip() or match is None:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a duration such as 90s, 20m, or 4h30m")
+    hours, minutes, seconds = (int(g) if g else 0 for g in match.groups())
+    total = hours * 3600 + minutes * 60 + seconds
+    if total > MAX_BACKDATE_SECONDS:
+        raise argparse.ArgumentTypeError(
+            "the telemetry service refuses readings more than 24 hours old; use at most 23h"
+        )
+    return float(total)

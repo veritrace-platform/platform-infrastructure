@@ -46,10 +46,13 @@ class Api:
         token: str | None = None,
         json: Any = None,
         params: dict | None = None,
+        content_type: str | None = None,
     ) -> Any:
         """Send a request and return the decoded body, or None for an empty one. A problem raises ApiError; 429
         is waited out as Retry-After says."""
         headers = {"Authorization": f"Bearer {token}"} if token else {}
+        if content_type:
+            headers["Content-Type"] = content_type
         for attempt in range(MAX_RATE_LIMIT_WAITS + 1):
             response = self._http.request(method, path, headers=headers, json=json, params=params)
             if response.status_code != httpx.codes.TOO_MANY_REQUESTS or attempt == MAX_RATE_LIMIT_WAITS:
@@ -72,6 +75,10 @@ class Api:
 
     def post(self, path: str, token: str | None = None, body: Any = None) -> Any:
         return self.request("POST", path, token=token, json=body)
+
+    def patch(self, path: str, token: str, body: dict) -> Any:
+        """Send a JSON merge patch (RFC 7396)."""
+        return self.request("PATCH", path, token=token, json=body, content_type="application/merge-patch+json")
 
     def items(self, path: str, token: str, **params: Any) -> Iterator[dict]:
         """Yield every item of a collection, following next_cursor."""

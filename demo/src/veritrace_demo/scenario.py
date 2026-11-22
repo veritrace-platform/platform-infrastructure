@@ -1,6 +1,7 @@
 """The M1 acceptance scenario: one shipment of chilled milk from the cold store of Saigon Fresh Foods to the store hub
-of District 7 Fresh Mart, carried by Mekong Cold Chain Logistics, through every step of the custody handover and a
-cold-chain breach, and finally recalled. Each step checks what the platform answers, including the rules it must
+of District 7 Fresh Mart, carried by Mekong Cold Chain Logistics, through every step of the custody handover, an
+excursion warning followed by the cold-chain breach it forecast, the shipment's thermal exposure, and finally a
+recall. Each step checks what the platform answers, including the rules it must
 enforce; the first unexpected answer stops the run.
 
 Every run commissions a lot and creates a shipment of its own, so the scenario can run again on a seeded stack.
@@ -29,19 +30,24 @@ from veritrace_demo.seed import commission, seed
 
 log = logging.getLogger("veritrace_demo")
 
-# A compressed sustained breach for 2–8 °C goods: readings leave the bounds for 40 s, so the breach is confirmed
-# 30 s after the first of them and resolved at the first reading back in bounds.
+# A compressed breach for 2–8 °C goods that builds up: cooling fades and the load warms about 2 °C per minute, so the
+# trend forecasts 8 °C a minute or more ahead and an excursion warning is issued. Readings then leave the bounds for
+# 40 s, so the breach is confirmed 30 s after the first of them, which closes the warning as BREACHED, and resolved
+# at the first reading back in bounds.
 BREACH = scenarios.parse(
     """
 name: acceptance-breach
-description: The reefer fails for 40 s and recovers.
+description: Cooling fades, the load warms, the reefer fails for 40 s, and recovers.
 interval_seconds: 5
 humidity_percent: 64
 jitter_celsius: 0.05
 phases:
   - name: in range
-    duration_seconds: 10
+    duration_seconds: 45
     temperature: 4.5
+  - name: cooling fades
+    duration_seconds: 120
+    temperature: {start: 4.5, end: 8.4}
   - name: compressor failure
     duration_seconds: 40
     temperature: {start: 9.5, end: 11}
@@ -217,14 +223,38 @@ def acceptance(api: Api, s: Settings, steps: Steps, listeners: list[Listener]) -
     expect(answer["type"] == "error" and answer["data"]["code"] == "NOT_FOUND", f"outsider subscription: {answer}")
     steps.ok("owner and driver follow the shipment's live telemetry; another tenant may not (NOT_FOUND)")
 
-    steps.out(f"    replaying a {int(BREACH.duration_seconds)} s breach over MQTT as device SIM-{sscc}-1 …")
+    steps.out(
+        f"    replaying a {int(BREACH.duration_seconds)} s build-up and breach over MQTT as device SIM-{sscc}-1 …"
+    )
     replay(s, sscc)
+    kinds = (
+        "cold_chain.warning_issued",
+        "cold_chain.breach_confirmed",
+        "cold_chain.warning_closed",
+        "cold_chain.breach_resolved",
+    )
     for feed in (owner_feed, driver_feed, receiver_feed):
-        for kind in ("cold_chain.breach_confirmed", "cold_chain.breach_resolved"):
+        for kind in kinds:
             got = feed.wait_for(lambda m, k=kind: m["type"] == k and m["data"]["sscc"] == sscc, NOTIFICATION_TIMEOUT)
             expect(got is not None, f"{feed.name} did not receive {kind}")
+    warned = owner_feed.wait_for(lambda m: m["type"] == "cold_chain.warning_issued", 0)
     confirmed = owner_feed.wait_for(lambda m: m["type"] == "cold_chain.breach_confirmed", 0)
-    assert confirmed is not None
+    closed = owner_feed.wait_for(lambda m: m["type"] == "cold_chain.warning_closed", 0)
+    assert warned is not None and confirmed is not None and closed is not None
+    expect(
+        owner_feed.messages.index(warned) < owner_feed.messages.index(confirmed),
+        "the warning did not come before the breach",
+    )
+    expect(
+        closed["data"]["outcome"] == "BREACHED" and closed["data"]["incident_id"] == confirmed["data"]["incident_id"],
+        f"warning closure {closed['data']}",
+    )
+    ahead = _seconds(confirmed["data"]["started_at"]) - _seconds(warned["data"]["issued_at"])
+    steps.ok(
+        f"excursion warning {ahead:.0f} s before the excursion (rising "
+        f"{warned['data']['slope_celsius_per_minute']} °C/min toward {warned['data']['bound_celsius']} °C); "
+        f"closed as BREACHED with a lead time of {closed['data']['lead_time_seconds']} s"
+    )
     latency = _seconds(confirmed["sent_at"]) - _seconds(confirmed["data"]["confirmed_at"])
     steps.ok(
         f"breach confirmed and resolved; notified to owner, driver, and dock receiver "
@@ -251,6 +281,20 @@ def acceptance(api: Api, s: Settings, steps: Steps, listeners: list[Listener]) -
     expect(summary["last_24h_count"] >= 1, f"summary {summary}")
     expect_problem(lambda: api.get(f"/api/v1/telemetry/shipments/{sscc}/readings", outsider), 404, "NOT_FOUND")
     steps.ok(f"readings per minute ({len(series)} buckets) and the incident summary; hidden from the other tenant")
+    warnings = api.get(f"/api/v1/telemetry/shipments/{sscc}/warnings", receiver)["items"]
+    expect(
+        len(warnings) == 1 and warnings[0]["outcome"] == "BREACHED" and warnings[0]["incident_id"] == incident["id"],
+        f"warnings {warnings}",
+    )
+    quality = api.get("/api/v1/telemetry/warnings/performance", owner_admin, sscc=sscc)
+    expect(
+        quality["warnings"]["breached"] == 1 and quality["precision"] == 1 and quality["recall"] == 1,
+        f"forecast quality {quality}",
+    )
+    steps.ok(
+        f"the warning is on record with its incident; forecast quality for the shipment: precision "
+        f"{quality['precision']:.0%}, recall {quality['recall']:.0%}"
+    )
 
     steps.section("Checkpoint and delivery")
     checkpoint_path = f"/api/v1/shipments/{shipment_id}/checkpoints"
@@ -272,6 +316,18 @@ def acceptance(api: Api, s: Settings, steps: Steps, listeners: list[Listener]) -
     )
     expect(delivered["status"] == "DELIVERED", f"status after delivery {delivered['status']}")
     steps.ok(f"the dock receiver scans the pallet at {f.DESTINATION.name}: DELIVERED")
+    exposure = wait_for_end_of_monitoring(api, receiver, sscc)
+    shelf = exposure["shelf_life"]
+    expect(
+        exposure["time_above_max_seconds"] >= 30 and shelf is not None and shelf["status"] == "INTACT",
+        f"thermal exposure {exposure}",
+    )
+    steps.ok(
+        f"thermal exposure at delivery: MKT {exposure['mean_kinetic_temperature_celsius']} °C, "
+        f"{exposure['time_above_max_seconds']} s above {exposure['max_temp_celsius']} °C, "
+        f"{exposure['degree_minutes_above_max']} °C·min; shelf life {shelf['status']}, "
+        f"{shelf['shelf_life_loss_hours']} h lost, expires {shelf['estimated_expiration_date']}"
+    )
 
     integrity = api.get(f"/api/v1/shipments/{shipment_id}/integrity", receiver)
     expect(integrity["valid"] and integrity["event_count"] == 5, f"integrity {integrity}")
@@ -312,6 +368,18 @@ def wait_until_visible(api: Api, token: str, sscc: str, who: str) -> None:
         time.sleep(0.5)
 
 
+def wait_for_end_of_monitoring(api: Api, token: str, sscc: str) -> dict:
+    """Return the shipment's thermal exposure once the telemetry service has projected the end of its monitoring."""
+    deadline = time.monotonic() + VISIBILITY_TIMEOUT
+    while True:
+        exposure = api.get(f"/api/v1/telemetry/shipments/{sscc}/thermal-exposure", token)
+        if exposure["monitoring_ended"]:
+            return exposure
+        if time.monotonic() > deadline:
+            raise Failed(f"the telemetry service still monitors {sscc} after its delivery")
+        time.sleep(0.5)
+
+
 def replay(s: Settings, sscc: str) -> None:
     """Publish the breach readings for the SSCC in real time."""
     publisher = MqttPublisher(s.mqtt_url, s.mqtt_username, s.mqtt_password)
@@ -325,7 +393,16 @@ def _announcer(steps: Steps) -> Callable[[str, dict], None]:
     def announce(_name: str, message: dict) -> None:
         if message["type"].startswith("cold_chain."):
             data = message["data"]
-            detail = f"{data.get('temperature_celsius', data.get('extreme_temperature_celsius'))} °C"
+            match message["type"]:
+                case "cold_chain.warning_issued":
+                    expected = data["predicted_excursion_at"]
+                    detail = f"{data['temperature_celsius']} °C, {data['bound_celsius']} °C expected at {expected}"
+                case "cold_chain.warning_closed":
+                    detail = data["outcome"]
+                case "cold_chain.breach_resolved":
+                    detail = f"peak {data['extreme_temperature_celsius']} °C"
+                case _:
+                    detail = f"{data.get('temperature_celsius', data.get('status'))}"
             steps.out(f"    ← {message['type']} at {message['sent_at']} ({detail})")
 
     return announce

@@ -62,8 +62,12 @@ seed: .env ## Seed the demo companies, users, catalog, and lots through the APIs
 	$(COMPOSE) --profile demo run --rm --build demo seed
 
 .PHONY: demo
-demo: .env ## Run the M1 acceptance scenario against the running stack (about 2 minutes)
+demo: .env ## Run the M1 acceptance scenario against the running stack (about 5 minutes)
 	$(COMPOSE) --profile demo run --rm --build demo scenario
+
+.PHONY: demo-evaluate
+demo-evaluate: .env ## Measure the excursion warnings on a synthetic journey: [SEED=7] [EPISODES=20] (about a minute)
+	$(COMPOSE) --profile demo run --rm --build demo evaluate --seed $(or $(SEED),7) --episodes $(or $(EPISODES),20)
 
 .PHONY: demo-watch
 demo-watch: .env ## Print a demo account's notifications: ACCOUNT=admin@d7mart.example [SSCC="<sscc> ..."]

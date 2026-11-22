@@ -1,0 +1,21 @@
+# For 2–8 °C goods. A door stays open for three minutes: the load warms 0.9 °C per minute to 7.2 °C, then cools back
+# once the door is closed. The trend points at 8 °C, so a warning is issued; it is cleared when the trend turns, and
+# no breach follows. Nobody intervenes in a simulation, so this warning counts against the forecast's precision.
+name: door-opening
+description: A door stays open for 3 minutes; warned, then cleared when the load cools back without a breach.
+interval_seconds: 5
+humidity_percent: 70
+jitter_celsius: 0.1
+phases:
+  - name: holding
+    duration_seconds: 180
+    temperature: 4.5
+  - name: door open
+    duration_seconds: 180
+    temperature: {start: 4.5, end: 7.2}
+  - name: door closed
+    duration_seconds: 180
+    temperature: {start: 7.2, end: 4.5}
+  - name: holding again
+    duration_seconds: 180
+    temperature: 4.5

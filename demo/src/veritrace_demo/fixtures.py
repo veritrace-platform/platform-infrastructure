@@ -53,6 +53,8 @@ class Item:
     description: str
     min_temp_celsius: float
     max_temp_celsius: float
+    # How many times faster the goods age for every 10 °C above the maximum (cold-chain-monitoring.md section 8).
+    shelf_life_q10: float = 3.0
 
 
 @dataclass(frozen=True)
@@ -124,6 +126,7 @@ SAIGON_FRESH = Company(
             description="Set yogurt, four cups; keep at 2–6 °C",
             min_temp_celsius=2,
             max_temp_celsius=6,
+            shelf_life_q10=2.5,
         ),
         Item(
             gtin="08930001000032",
@@ -131,6 +134,7 @@ SAIGON_FRESH = Company(
             description="Individually quick frozen; keep at -25 to -18 °C",
             min_temp_celsius=-25,
             max_temp_celsius=-18,
+            shelf_life_q10=2,
         ),
     ),
     lots=(

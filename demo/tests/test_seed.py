@@ -23,6 +23,7 @@ class FakeCore:
         self.users = {}  # email -> (tenant id, user)
         self.collections = {"locations": [], "products": [], "lots": []}  # items with "tenant"
         self.posts = Counter()
+        self.patches = Counter()
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path.removeprefix("/api/v1/")
@@ -43,6 +44,13 @@ class FakeCore:
             user = {"id": f"u{next(self.ids)}", "email": body["email"], "role": body["role"]}
             self.users[body["email"]] = (tenant, user)
             return httpx.Response(201, json=user)
+        if request.method == "PATCH":
+            collection, item_id = path.split("/")
+            item = next(i for i in self.collections[collection] if i["id"] == item_id and i["tenant"] == tenant)
+            assert request.headers["Content-Type"] == "application/merge-patch+json"
+            item.update(body)
+            self.patches[path] += 1
+            return httpx.Response(200, json=item)
         if request.method == "GET":
             return self.page([i for i in self.collections[path] if i["tenant"] == tenant])
         item = {"id": f"{path}{next(self.ids)}", "tenant": tenant, "status": "ACTIVE", **body}
@@ -94,6 +102,20 @@ def test_seed_creates_the_demo_world_once():
     new_posts = core.posts - posts
     assert set(new_posts) == {"tenants", "auth/login"}
     assert second.users.keys() == first.users.keys()
+
+
+def test_seed_sets_the_shelf_life_q10_of_products_seeded_before_it_existed():
+    core = FakeCore()
+    run_seed(core)
+    yogurt = next(p for p in core.collections["products"] if p["gtin"] == "08930001000025")
+    assert yogurt["shelf_life_q10"] == 2.5
+    # A product created before the field existed has the default Q10 of 3.
+    yogurt["shelf_life_q10"] = 3.0
+    run_seed(core)
+    assert yogurt["shelf_life_q10"] == 2.5
+    assert sum(core.patches.values()) == 1
+    run_seed(core)
+    assert sum(core.patches.values()) == 1
 
 
 def test_seed_explains_a_password_that_does_not_match():

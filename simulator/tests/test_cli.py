@@ -1,3 +1,4 @@
+import argparse
 import threading
 
 import pytest
@@ -65,6 +66,36 @@ def test_play_paces_ticks_by_the_clock():
     assert cli.play(loaded, devices, recorder, Stop(), max_ticks=6, clock=lambda: now[0]) == 0
     assert waits == [0, 5, 5, 5, 5, 5]
     assert [p["ts"] for _, p in recorder.messages] == [1_000_000 + 5_000 * k for k in range(6)]
+
+
+def test_backdated_play_catches_up_at_once():
+    loaded = scenario.load("sensor-gap")
+    devices = devices_for([SSCC], 1, loaded.interval_seconds, seed=1)
+    now = [10_000.0]
+    waits = []
+
+    class Stop(threading.Event):
+        def wait(self, timeout=None):
+            waits.append(timeout)
+            now[0] += timeout
+            return False
+
+    recorder = Recorder()
+    assert cli.play(loaded, devices, recorder, Stop(), max_ticks=6, backdate_seconds=12, clock=lambda: now[0]) == 0
+    # The ticks due 12 s ago, 7 s ago, and 2 s ago go out at once; the next ones follow the clock.
+    assert waits == [0, 0, 0, 3, 5, 5]
+    assert recorder.messages[0][1]["ts"] == 9_988_000
+
+
+@pytest.mark.parametrize(("text", "seconds"), [("90s", 90), ("20m", 1200), ("4h30m", 16200), ("1h15m30s", 4530)])
+def test_durations(text, seconds):
+    assert cli.duration(text) == seconds
+
+
+@pytest.mark.parametrize("text", ["", "90", "1d", "-5m", "24h"])
+def test_invalid_durations(text):
+    with pytest.raises(argparse.ArgumentTypeError):
+        cli.duration(text)
 
 
 def test_play_loops_until_stopped():

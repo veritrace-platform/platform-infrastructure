@@ -1,0 +1,25 @@
+# For 2–8 °C goods with a Q10 of 3. The reefer unit fails on a long haul: the load warms to the 22 °C of the cargo
+# space and stays there for three hours before the unit is repaired. A warning precedes the breach; the breach lasts
+# hours, so the shelf life is re-assessed while it lasts and drops to REDUCED (about 12 hours of extra aging). Replay
+# it with --backdate 4h30m to see the whole journey within seconds.
+name: reefer-failure
+description: The reefer fails for hours at 22 °C; warned, breached, and the shelf life is reduced.
+interval_seconds: 5
+humidity_percent: 75
+jitter_celsius: 0.15
+phases:
+  - name: holding
+    duration_seconds: 600
+    temperature: 4.5
+  - name: unit failing
+    duration_seconds: 1800
+    temperature: {start: 4.5, end: 22.0}
+  - name: unit down
+    duration_seconds: 10800
+    temperature: 22.0
+  - name: unit repaired
+    duration_seconds: 1800
+    temperature: {start: 22.0, end: 5.0}
+  - name: holding again
+    duration_seconds: 600
+    temperature: 5.0
